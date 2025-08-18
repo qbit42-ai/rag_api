@@ -207,7 +207,8 @@ async def query_embeddings_by_file_id(
             )
 
         if not documents:
-            return {"results": [], "kb_id": DEFAULT_KB_ID}
+            # return {"results": [], "kb_id": DEFAULT_KB_ID}
+            return authorized_documents
 
         document, score = documents[0]
         doc_metadata = document.metadata
@@ -248,7 +249,8 @@ async def query_embeddings_by_file_id(
             }
             results.append(result)
 
-        return {"results": results, "kb_id": DEFAULT_KB_ID}
+        # return {"results": results, "kb_id": DEFAULT_KB_ID}
+        return authorized_documents
 
     except HTTPException as http_exc:
         logger.error(
