@@ -14,17 +14,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
       - name: Install uv and set Python version
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.10" # because thats the version we are using to build the docker images
           enable-cache: true
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install -r requirements.txt
-          uv pip install -r test_requirements.txt
+          uv pip install --system -r requirements.txt
+          uv pip install --system -r test_requirements.txt
 
       - name: Run tests and generate report
         env:
