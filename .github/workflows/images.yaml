@@ -8,21 +8,24 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     strategy:
       matrix:
         include:
           - target: main
             file: Dockerfile
-            image_name:
+            repository: rag-api
           - target: lite
             file: Dockerfile.lite
-            image_name: -lite
+            repository: rag-api-lite
 
     steps:
       # Check out the repository
@@ -55,13 +58,14 @@ jobs:
         uses: docker/build-push-action@v5
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
         with:
           context: .
           file: ${{ matrix.file }}
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:${{ github.sha }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ matrix.repository }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ matrix.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           target: ${{ matrix.target }}

@@ -10,15 +10,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     strategy:
       matrix:
         include:
           - target: main
             file: Dockerfile
-            image_name:
+            repository: rag-api
           - target: lite
             file: Dockerfile.lite
-            image_name: -lite
+            repository: rag-api-lite
 
     steps:
       - name: Checkout
@@ -45,14 +48,15 @@ jobs:
         uses: docker/build-push-action@v5
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
           TAG: ${{ inputs.tag }}
         with:
           context: .
           file: ${{ matrix.file }}
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:${{ env.TAG }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ matrix.repository }}:${{ env.TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ matrix.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           target: ${{ matrix.target }}
