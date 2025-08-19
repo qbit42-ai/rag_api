@@ -19,10 +19,10 @@ jobs:
         include:
           - target: main
             file: Dockerfile
-            image_name: librechat-rag-api-dev
+            image_name:
           - target: lite
             file: Dockerfile.lite
-            image_name: librechat-rag-api-dev-lite
+            image_name: -lite
 
     steps:
       # Check out the repository
@@ -61,7 +61,7 @@ jobs:
           file: ${{ matrix.file }}
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-${{ matrix.image_name }}:${{ github.sha }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-${{ matrix.image_name }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:latest
           platforms: linux/amd64,linux/arm64
           target: ${{ matrix.target }}

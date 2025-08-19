@@ -15,10 +15,10 @@ jobs:
         include:
           - target: main
             file: Dockerfile
-            image_name: librechat-rag-api
+            image_name:
           - target: lite
             file: Dockerfile.lite
-            image_name: librechat-rag-api-lite
+            image_name: -lite
 
     steps:
       - name: Checkout
@@ -52,7 +52,7 @@ jobs:
           file: ${{ matrix.file }}
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-${{ matrix.image_name }}:${{ env.TAG }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-${{ matrix.image_name }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:${{ env.TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}${{ matrix.image_name }}:latest
           platforms: linux/amd64,linux/arm64
           target: ${{ matrix.target }}
