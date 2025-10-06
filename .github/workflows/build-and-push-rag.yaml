@@ -40,7 +40,7 @@ jobs:
           echo "building image and pushing to ${{ env.ECR_URI }} " 
           export ECR_FULL=${{ env.ECR_URI }}rag-api-lite
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_FULL
-          docker build -t ${ECR_FULL}:${COMMIT_SHA_SHORT} -f Dockerfile.multi --target api-build .
+          docker build -t ${ECR_FULL}:${COMMIT_SHA_SHORT} -f Dockerfile.lite .
           docker push ${ECR_FULL}:${COMMIT_SHA_SHORT}
           # tagging with real versions later
           # export TAG=v1.0.0
