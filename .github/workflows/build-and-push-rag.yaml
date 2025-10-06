@@ -1,4 +1,4 @@
-name: build and push api container
+name: build and push rag-api-lite container
 
 on:
   push:
