@@ -1,0 +1,47 @@
+name: build and push api container
+
+on:
+  push:
+    branches:
+      - feat/new-deployment
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+
+  push-images:
+    name: push standard images
+    runs-on: ubuntu-latest
+    environment: shared-services
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout Repository
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
+          role-session-name: GitHub-Action-Role
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: ecr domain config 
+        env: 
+          ACC: ${{ secrets.ACC }}
+        run: |                    
+          echo "ECR_URI=${{ env.ACC }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/qbit42-" >> $GITHUB_ENV
+          echo "COMMIT_SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          
+      - name: build and push api 
+        run: |
+          echo "building image and pushing to ${{ env.ECR_URI }} " 
+          export ECR_FULL=${{ env.ECR_URI }}rag-api-lite
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_FULL
+          docker build -t ${ECR_FULL}:${COMMIT_SHA_SHORT} -f Dockerfile.multi --target api-build .
+          docker push ${ECR_FULL}:${COMMIT_SHA_SHORT}
+          # tagging with real versions later
+          # export TAG=v1.0.0
+          # docker tag ${ECR_FULL}:${COMMIT_SHA_SHORT} ${ECR_FULL}:${TAG}
