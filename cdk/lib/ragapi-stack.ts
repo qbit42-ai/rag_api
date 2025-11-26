@@ -11,7 +11,7 @@ export class RagApiStack extends cdk.Stack {
     super(scope, id, props);
     
     const platformName = 'platform';
-    const applicationName = 'meilisearch';
+    const applicationName = 'ragapi';
     
     const awsAccSecret = sm.Secret.fromSecretNameV2(this, 'awsAccSecret', 'accounts');        
     const sharedservicesacc = awsAccSecret.secretValueFromJson('sharedservices_account').unsafeUnwrap() as unknown as string;
@@ -38,6 +38,9 @@ export class RagApiStack extends cdk.Stack {
     console.log("= = = = = = = = = = = = = = = = = = = = = = = = = = = = ");
     console.log("deploying container image: " + containerRepoURI + ':'  + containerImgTag);
     console.log("= = = = = = = = = = = = = = = = = = = = = = = = = = = = ");
+  
+    //  task definitions
+    // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
     
     const taskDef = new ecs.FargateTaskDefinition(this, applicationName+'TaskDef', {
       family: applicationName+'-taskdef',

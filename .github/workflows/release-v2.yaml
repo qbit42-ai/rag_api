@@ -29,10 +29,8 @@ jobs:
           
       - id: build
         name: build
-        env:
-          SHARED_SERVICES_ACC: ${{ secrets.SHARED_SERVICES_ACC }}
         run: |   
-          export ECR_REPO=${{ env.SHARED_SERVICES_ACC }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO }}
+          export ECR_REPO=$(aws sts get-caller-identity --query 'Account' --output text).dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO }}
           export TAG=${{ github.ref_name }}
           export IMG=$ECR_REPO:$TAG   
           echo "building image $IMG " 

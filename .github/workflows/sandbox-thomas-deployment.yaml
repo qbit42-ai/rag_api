@@ -17,8 +17,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
-        name: Checkout Repository              
-
+        name: Checkout Repository
+              
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
