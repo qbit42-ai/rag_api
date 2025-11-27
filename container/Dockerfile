@@ -8,14 +8,14 @@ RUN chmod +x /tini
 
 # Install pandoc and netcat
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    pandoc \
-    netcat-openbsd \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+&& apt-get install -y --no-install-recommends \
+pandoc \
+netcat-openbsd \
+libgl1 \
+libglib2.0-0 \
+&& rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY requirements.lite.txt ./requirements.txt
 RUN uv pip install --system -r requirements.txt
 
 # Download standard NLTK data, to prevent unstructured from downloading packages at runtime
@@ -28,6 +28,7 @@ ENV SCARF_NO_ANALYTICS=true
 COPY . .
 
 COPY ./container/tools /root/tools
+RUN chmod +x /root/tools/entrypoint.sh
 
 # we need additional config when the container starts, so we will execute our own script
 ENTRYPOINT ["/tini", "--", "/root/tools/entrypoint.sh"]
