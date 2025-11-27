@@ -13,7 +13,7 @@ RUN apt-get update \
     netcat-openbsd \
     libgl1 \
     libglib2.0-0 \
-    curl \
+    curl jq \
     && rm -rf /var/lib/apt/lists/* && \
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
