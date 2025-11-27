@@ -15,4 +15,9 @@ set +a
 rm .env.json
 rm .env
 
+export RAGAPIPW=$(aws secretsmanager get-secret-value --secret-id $RA_ARN |jq '.SecretString | fromjson')
+export POSTGRES_USER=$(echo $RAGAPIPW |jq -r .username)
+export POSTGRES_PASSWORD=$(echo $RAGAPIPW |jq -r .password)
+export POSTGRES_DB=ragapi 
+
 exec "${@}"

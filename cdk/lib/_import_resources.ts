@@ -29,6 +29,7 @@ export class qbit42PlatformImports {
   public rdsCredentialsArn: string = '';
   public rdsBroadcastArn: string = '';
   public rdsQbit42Arn: string = '';
+  public rdsRagapiArn: string = '';
   public eventBus: cdk.aws_events.IEventBus;
   public hostedZoneName: string = '';
   public hostedZoneId: string = '';
@@ -129,6 +130,7 @@ export class qbit42PlatformImports {
     this.rdsCredentialsArn = cdk.Fn.importValue('rdsCredentialsArn');
     this.rdsBroadcastArn = cdk.Fn.importValue('rdsBroadcastArn');
     this.rdsQbit42Arn = cdk.Fn.importValue('rdsQbit42Arn');
+    this.rdsRagapiArn = cdk.Fn.importValue('rdsRagapiArn');
 
     this.broadcastDbSecret = {
       host: sm.Secret.fromSecretCompleteArn(scope, 'rdsCredsSecret', this.rdsCredentialsArn).secretValueFromJson('host').unsafeUnwrap(),

@@ -61,7 +61,8 @@ export class RagApiStack extends cdk.Stack {
       essential: true,
       environment: { 
         'DB_HOST': imports.broadcastDbSecret.host,
-        'RAG_PORT': '8000'
+        'RAG_PORT': '8000',
+        'RA_ARN': imports.rdsRagapiArn
       },
       healthCheck: {
         command: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ],        
