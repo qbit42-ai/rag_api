@@ -3,9 +3,16 @@
 
 echo "custome entrypoint..."
 
-AWS_PAGER="" aws secretsmanager get-secret-value --secret-id /config/env --output text --query 'SecretString' >.env
-set -a # automatically export all variables
+AWS_PAGER="" aws secretsmanager get-secret-value --secret-id /config/env --output text --query 'SecretString' >.env.json
+
+jq -r 'to_entries | .[] | "\(.key)=\(.value)"' .env.json >.env
+
+set -a 
+# automatically export all variables
 source .env
 set +a
+
+rm .env.json
+rm .env
 
 exec "${@}"
