@@ -8,12 +8,17 @@ RUN chmod +x /tini
 
 # Install pandoc and netcat
 RUN apt-get update \
-&& apt-get install -y --no-install-recommends \
-pandoc \
-netcat-openbsd \
-libgl1 \
-libglib2.0-0 \
-&& rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends \
+    pandoc \
+    netcat-openbsd \
+    libgl1 \
+    libglib2.0-0 \
+    curl \
+    && rm -rf /var/lib/apt/lists/* && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
 
 COPY requirements.lite.txt ./requirements.txt
 RUN uv pip install --system -r requirements.txt

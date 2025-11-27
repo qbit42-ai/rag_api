@@ -63,6 +63,13 @@ export class RagApiStack extends cdk.Stack {
         'DB_HOST': imports.broadcastDbSecret.host,
         'RAG_PORT': '8000'
       },
+      healthCheck: {
+        command: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ],        
+        interval: cdk.Duration.seconds(5),
+        retries: 2,
+        startPeriod: cdk.Duration.seconds(10),
+        timeout: cdk.Duration.seconds(2),
+      },
       //command: ['sleep', '10000']
     });
     ragapiContainer.addPortMappings({
