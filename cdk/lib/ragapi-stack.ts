@@ -12,9 +12,8 @@ export class RagApiStack extends cdk.Stack {
     
     const platformName = 'platform';
     const applicationName = 'ragapi';
-    
-    const awsAccSecret = sm.Secret.fromSecretNameV2(this, 'awsAccSecret', 'accounts');        
-    const sharedservicesacc = awsAccSecret.secretValueFromJson('sharedservices_account').unsafeUnwrap() as unknown as string;
+
+    const sharedservicesacc = process.env.SHARED_SERVICES_ACC;
 
     const region = this.region;
     
@@ -34,11 +33,7 @@ export class RagApiStack extends cdk.Stack {
     }
     const containerRepoName = 'qbit42-rag-api';
     const containerRepoURI = sharedservicesacc + '.dkr.ecr.' + region + '.amazonaws.com/' + containerRepoName;  
-  
-    console.log("= = = = = = = = = = = = = = = = = = = = = = = = = = = = ");
-    console.log("deploying container image: " + containerRepoURI + ':'  + containerImgTag);
-    console.log("= = = = = = = = = = = = = = = = = = = = = = = = = = = = ");
-  
+    
     //  task definitions
     // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
     
@@ -66,10 +61,10 @@ export class RagApiStack extends cdk.Stack {
       },
       healthCheck: {
         command: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ],        
-        interval: cdk.Duration.seconds(5),
-        retries: 2,
+        interval: cdk.Duration.seconds(10),
+        retries: 3,
         startPeriod: cdk.Duration.seconds(10),
-        timeout: cdk.Duration.seconds(2),
+        timeout: cdk.Duration.seconds(5),
       },
       //command: ['sleep', '10000']
     });
@@ -89,7 +84,7 @@ export class RagApiStack extends cdk.Stack {
       assignPublicIp: false,      
       securityGroups: [ imports.ecsServiceSecurityGroup ],
       deploymentStrategy: ecs.DeploymentStrategy.ROLLING,
-      desiredCount: 1
+      desiredCount: 1,
     });    
 
     service.enableServiceConnect({

@@ -1,9 +1,8 @@
-name: create toolbox release
+name: build 
 
 on:
-  release:
-    types: [published]
-    
+  workflow_call:
+
 jobs:
 
   build:
@@ -16,4 +15,3 @@ jobs:
       ENVIRONMENT: shared-services
       AWS_REGION: eu-central-1
       REPO: qbit42-rag-api
-      RELEASE: ${{ github.ref_name }}
