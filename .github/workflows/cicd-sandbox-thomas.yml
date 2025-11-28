@@ -7,15 +7,15 @@ on:
 
 jobs:
 
-  build:
-    uses: ./.github/workflows/build.yml
-    permissions:
-      id-token: write
-      contents: read
-    secrets: inherit
+  # build:
+  #   uses: ./.github/workflows/build.yml
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   secrets: inherit
 
   deploy:
-    needs: build
+    #needs: build
     uses: qbit42-ai/aws-management/.github/workflows/_deploy.yml@main
     permissions:
       id-token: write
@@ -25,3 +25,4 @@ jobs:
       ENVIRONMENT: sandbox-thomas
       AWS_REGION: eu-central-1
       STACKNAME: RagApiStack
+      USE_CURRENT_REF: false
