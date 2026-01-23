@@ -1,14 +1,19 @@
 name: Docker Dev Images Release
 
 on:
-  workflow_dispatch:
-  push:
-    tags:
-      - "*"
+  release:
+    types: [published]
 
 jobs:
-  call-docker-build:
-    uses: ./.github/workflows/docker-build-workflow.yaml
-    with:
-      tag: ${{ github.ref_name }}
+
+  build:
+    uses: qbit42-ai/aws-management/.github/workflows/_build.yml@main
+    permissions:
+      id-token: write
+      contents: read
     secrets: inherit
+    with:
+      ENVIRONMENT: shared-services
+      AWS_REGION: eu-central-1
+      REPO: qbit42-rag-api
+      RELEASE: ${{ github.ref_name }}
