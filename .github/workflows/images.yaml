@@ -28,6 +28,18 @@ jobs:
             repository: rag-api-lite
 
     steps:
+      # Free up disk space
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       # Check out the repository
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,3 +81,5 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           target: ${{ matrix.target }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

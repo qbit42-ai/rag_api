@@ -1,8 +1,11 @@
 # app/utils/document_loader.py
+
 import os
 import codecs
 import tempfile
+
 from typing import List, Optional
+import chardet
 
 from langchain_core.documents import Document
 
@@ -23,13 +26,13 @@ from langchain_community.document_loaders import (
 
 def detect_file_encoding(filepath: str) -> str:
     """
-    Detect the encoding of a file by checking for BOM markers.
+    Detect the encoding of a file using BOM markers and chardet for broader support.
     Returns the detected encoding or 'utf-8' as default.
     """
     with open(filepath, "rb") as f:
-        raw = f.read(4)
+        raw = f.read(4096)  # Read a larger sample for better detection
 
-    # Check for BOM markers
+    # Check for BOM markers first
     if raw.startswith(codecs.BOM_UTF16_LE):
         return "utf-16-le"
     elif raw.startswith(codecs.BOM_UTF16_BE):
@@ -42,9 +45,14 @@ def detect_file_encoding(filepath: str) -> str:
         return "utf-32-le"
     elif raw.startswith(codecs.BOM_UTF32_BE):
         return "utf-32-be"
-    else:
-        # Default to utf-8 if no BOM is found
-        return "utf-8"
+
+    # Use chardet to detect encoding if no BOM is found
+    result = chardet.detect(raw)
+    encoding = result.get("encoding")
+    if encoding:
+        return encoding.lower()
+    # Default to utf-8 if detection fails
+    return "utf-8"
 
 
 def cleanup_temp_encoding_file(loader) -> None:
@@ -53,7 +61,7 @@ def cleanup_temp_encoding_file(loader) -> None:
 
     :param loader: The document loader that may have created a temporary file
     """
-    if hasattr(loader, "_temp_filepath"):
+    if hasattr(loader, "_temp_filepath") and loader._temp_filepath is not None:
         try:
             os.remove(loader._temp_filepath)
         except Exception as e:
@@ -61,12 +69,15 @@ def cleanup_temp_encoding_file(loader) -> None:
 
 
 def get_loader(filename: str, file_content_type: str, filepath: str):
+    """Get the appropriate document loader based on file type and\or content type."""
     file_ext = filename.split(".")[-1].lower()
     known_type = True
 
-    if file_ext == "pdf":
-        loader = PyPDFLoader(filepath, extract_images=PDF_EXTRACT_IMAGES)
-    elif file_ext == "csv":
+    # File Content Type reference:
+    # ref.: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
+    if file_ext == "pdf" or file_content_type == "application/pdf":
+        loader = SafePyPDFLoader(filepath, extract_images=PDF_EXTRACT_IMAGES)
+    elif file_ext == "csv" or file_content_type == "text/csv":
         # Detect encoding for CSV files
         encoding = detect_file_encoding(filepath)
 
@@ -79,7 +90,9 @@ def get_loader(filename: str, file_content_type: str, filepath: str):
                     mode="w", encoding="utf-8", suffix=".csv", delete=False
                 ) as temp_file:
                     # Read the original file with detected encoding
-                    with open(filepath, "r", encoding=encoding) as original_file:
+                    with open(
+                        filepath, "r", encoding=encoding, errors="replace"
+                    ) as original_file:
                         content = original_file.read()
                         temp_file.write(content)
 
@@ -99,26 +112,37 @@ def get_loader(filename: str, file_content_type: str, filepath: str):
             loader = CSVLoader(filepath)
     elif file_ext == "rst":
         loader = UnstructuredRSTLoader(filepath, mode="elements")
-    elif file_ext == "xml":
+    elif file_ext == "xml" or file_content_type in [
+        "application/xml",
+        "text/xml",
+        "application/xhtml+xml",
+    ]:
         loader = UnstructuredXMLLoader(filepath)
-    elif file_ext == "pptx":
+    elif file_ext in ["ppt", "pptx"] or file_content_type in [
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ]:
         loader = UnstructuredPowerPointLoader(filepath)
-    elif file_ext == "md":
+    elif file_ext == "md" or file_content_type in [
+        "text/markdown",
+        "text/x-markdown",
+        "application/markdown",
+        "application/x-markdown",
+    ]:
         loader = UnstructuredMarkdownLoader(filepath)
-    elif file_content_type == "application/epub+zip":
+    elif file_ext == "epub" or file_content_type == "application/epub+zip":
         loader = UnstructuredEPubLoader(filepath)
-    elif (
-        file_content_type
-        == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        or file_ext in ["doc", "docx"]
-    ):
+    elif file_ext in ["doc", "docx"] or file_content_type in [
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]:
         loader = Docx2txtLoader(filepath)
-    elif file_content_type in [
+    elif file_ext in ["xls", "xlsx"] or file_content_type in [
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ] or file_ext in ["xls", "xlsx"]:
+    ]:
         loader = UnstructuredExcelLoader(filepath)
-    elif file_content_type == "application/json" or file_ext == "json":
+    elif file_ext == "json" or file_content_type == "application/json":
         loader = TextLoader(filepath, autodetect_encoding=True)
     elif file_ext in known_source_ext or (
         file_content_type and file_content_type.find("text/") >= 0
@@ -133,12 +157,37 @@ def get_loader(filename: str, file_content_type: str, filepath: str):
 
 def clean_text(text: str) -> str:
     """
+    Clean up text from PDF lopader
+
+    :param text: The original text
+    :return: Cleaned text
+    """
+    text = remove_null(text)
+    text = remove_non_utf8(text)
+    return text
+
+
+def remove_null(text: str) -> str:
+    """
     Remove NUL (0x00) characters from a string.
 
     :param text: The original text with potential NUL characters.
     :return: Cleaned text without NUL characters.
     """
     return text.replace("\x00", "")
+
+
+def remove_non_utf8(text: str) -> str:
+    """
+    Remove invalid UTF-8 characters from a string, such as surrogate characters
+
+    :param text: The original text with potential invalid utf-8 characters
+    :return: Cleaned text without invalid utf-8 characters.
+    """
+    try:
+        return text.encode("utf-8", "ignore").decode("utf-8")
+    except UnicodeError:
+        return text
 
 
 def process_documents(documents: List[Document]) -> str:
@@ -166,3 +215,39 @@ def process_documents(documents: List[Document]) -> str:
             processed_text += new_content
 
     return processed_text.strip()
+
+
+class SafePyPDFLoader:
+    """
+    A wrapper around PyPDFLoader that handles image extraction failures gracefully.
+    Falls back to text-only extraction when image extraction fails.
+
+    This is a workaround for issues with PyPDFLoader that can occur when extracting images
+    from PDFs, which can lead to KeyError exceptions if the PDF is malformed or has unsupported
+    image formats. This class attempts to load the PDF with image extraction enabled, and if it
+    fails due to a KeyError related to image filters, it falls back to loading the PDF
+    without image extraction.
+    ref.: https://github.com/langchain-ai/langchain/issues/26652
+    """
+
+    def __init__(self, filepath: str, extract_images: bool = False):
+        self.filepath = filepath
+        self.extract_images = extract_images
+        self._temp_filepath = None  # For compatibility with cleanup function
+
+    def load(self) -> List[Document]:
+        """Load PDF documents with automatic fallback on image extraction errors."""
+        loader = PyPDFLoader(self.filepath, extract_images=self.extract_images)
+
+        try:
+            return loader.load()
+        except KeyError as e:
+            if "/Filter" in str(e) and self.extract_images:
+                logger.warning(
+                    f"PDF image extraction failed for {self.filepath}, falling back to text-only: {e}"
+                )
+                fallback_loader = PyPDFLoader(self.filepath, extract_images=False)
+                return fallback_loader.load()
+            else:
+                # Re-raise if it's a different error
+                raise
